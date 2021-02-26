@@ -1,0 +1,23 @@
+{
+  "type": "project",
+  "name": "vasilyevr/mikrotik-blacklist-builder",
+  "description": "Mikrotik blacklist builder",
+  "keywords": ["mikrotik", "blacklist", "firewall"],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "VasilyevR",
+      "email": "romanvasilyev@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  }
+}
