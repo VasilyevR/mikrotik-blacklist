@@ -41,29 +41,25 @@ class BlackList
      */
     private function parse(): void
     {
-        $n = 1;
-        echo "$n\n";$n++;
         while ($generator = array_shift($this->fileLists)) {
             $generator->rewind();
             while ($generator->valid()) {
                 $line = $generator->current();
-                echo "$line a\n";$n++;
                 if (is_bool($line)) {
+                    $generator->next();
                     continue;
                 }
-                echo "$n g\n";$n++;
                 $entry = $this->getEntry($line);
                 if (null === $entry) {
+                    $generator->next();
                     continue;
                 }
-                echo "$n a\n";$n++;
                 if (in_array($entry, $this->list)) {
+                    $generator->next();
                     continue;
                 }
-                echo "$n qq\n";$n++;
                 $this->list[] = $entry;
                 $generator->next();
-                echo "$n\n";$n++;
             }
             unset ($fileList);
         }
@@ -87,14 +83,12 @@ class BlackList
      */
     private function isCorrectIpset(string $line): bool
     {
-        if (preg_match("~^(?'ip'.+)/?(?'subnet'[^/]+)?$~", $line, $m)) {
+        if (preg_match("/^(?'ip'(?:[0-9]{1,3}\.){3}[0-9]{1,3})\/?(?'subnet'\d+)?$/", $line, $m)) {
             $ip = $m['ip'];
             $subnet = $m['subnet'] ?? null;
             $isSubnetOk = is_numeric($subnet) || null === $subnet;
-
             return $isSubnetOk && ip2long($ip);
         }
-
         return false;
     }
 
@@ -104,6 +98,6 @@ class BlackList
      */
     private function getFirewallRule(string $ipset): string
     {
-        return sprintf('add route %s', $ipset);
+        return sprintf('add list=blacklist address=%s', $ipset);
     }
 }

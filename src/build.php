@@ -12,5 +12,4 @@ $lists = [
         'ciarmy.ipset',
     ];
 $blacklist = new BlackList\BlackList($lists);
-$ipsetList = $blacklist->getList();
-var_dump(count($ipsetList));
+$blacklist->getList();
