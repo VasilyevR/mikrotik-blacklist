@@ -4,86 +4,47 @@ declare(strict_types=1);
 namespace App\BlackList;
 
 use Iterator;
+use RuntimeException;
 
-class TextFile implements Iterator
-{
-    /**
-     * @var false|resource
-     */
-    protected $fileHandler;
+class TextFile implements Iterator {
+    protected $fileHandle;
 
-    /**
-     * @var int
-     */
-    protected int $key;
+    protected $line;
+    protected $i;
 
-    /**
-     * @var string
-     */
-    protected string $currentLine;
-
-    /**
-     * @var string
-     */
-    protected string $fileName;
-
-    /**
-     * @param string $fileName
-     */
-    public function __construct(string $fileName)
-    {
-        $this->fileHandler = fopen($fileName, 'r');
-
-        $this->fileName = $fileName;
-        $this->key = 0;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function current()
-    {
-        return $this->currentLine;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function next(): void
-    {
-        if ( $this->valid() ){
-            $this->currentLine = fgets($this->fileHandler );
-            $this->key++;
+    public function __construct($fileName) {
+        if (!$this->fileHandle = fopen($fileName, 'r')) {
+            throw new RuntimeException('Невозможно открыть файл "' . $fileName . '"');
         }
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function key()
-    {
-        return $this->key;
+    public function rewind() {
+        fseek($this->fileHandle, 0);
+        $this->line = fgets($this->fileHandle);
+        $this->i = 0;
     }
 
-    /**
-     * @inheritDoc
-     */
     public function valid(): bool
     {
-        return !feof( $this->fileHandler );
+        return false !== $this->line;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function rewind(): void
-    {
-        $this->__destruct();
-        $this->__construct( $this->fileName );
+    public function current() {
+        return $this->line;
     }
 
-    protected function __destruct()
-    {
-        fclose( $this->fileHandler );
+    public function key() {
+        return $this->i;
+    }
+
+    public function next() {
+        if (false !== $this->line) {
+            $this->line = fgets($this->fileHandle);
+            $this->i++;
+        }
+    }
+
+    public function __destruct() {
+        fclose($this->fileHandle);
     }
 }
