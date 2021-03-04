@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 namespace App\BlackList;
 
@@ -21,12 +20,12 @@ class TextFile implements Iterator {
     /**
      * @var int
      */
-    protected int $i;
+    protected $i;
 
     /**
      * @param string $fileName
      */
-    public function __construct(string $fileName) {
+    public function __construct($fileName) {
         if (!$this->fileHandle = fopen($fileName, 'r')) {
             throw new RuntimeException('Невозможно открыть файл "' . $fileName . '"');
         }
@@ -44,7 +43,7 @@ class TextFile implements Iterator {
     /**
      * @return bool
      */
-    public function valid(): bool
+    public function valid()
     {
         return false !== $this->line;
     }
@@ -59,7 +58,7 @@ class TextFile implements Iterator {
     /**
      * @return int
      */
-    public function key(): int
+    public function key()
     {
         return $this->i;
     }
