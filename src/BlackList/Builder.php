@@ -6,6 +6,8 @@ class Builder
 {
     const IP_ENTRY = "/^(?'ip'(?:[0-9]{1,3}\.){3}[0-9]{1,3})\/?(?'subnet'\d+)?$/";
 
+    const BLACKLISTFULL_FILENAME = 'blacklistfull.txt';
+
     /**
      * @var string[]
      */
@@ -37,13 +39,15 @@ class Builder
     }
 
     /**
-     * @param string $string
+     * @param string $fullFileName
      */
-    public function buildFile($string)
+    public function buildFile($fullFileName)
     {
         $this->createFileLists();
         $this->parseFileLists();
-        $this->saveList($string);
+        $this->createDiffFile($fullFileName . '.diff');
+        $this->saveBlackListEntries();
+        $this->saveAllBlackListRules($fullFileName . '.rsc');
     }
 
     private function createFileLists()
@@ -66,7 +70,7 @@ class Builder
                     $generator->next();
                     continue;
                 }
-                $entry = $this->getEntry($line);
+                $entry = $this->getEntry(trim($line));
                 if (null === $entry) {
                     $generator->next();
                     continue;
@@ -82,14 +86,41 @@ class Builder
         }
     }
 
+    private function createDiffFile($fullFileName)
+    {
+        $entriesAll = @file(self::BLACKLISTFULL_FILENAME, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (false === $entriesAll) {
+            $entriesDiff = array_map([$this, 'getFirewallRuleAdd'], $this->list);
+            array_unshift($entriesDiff, "/ip firewall address-list");
+            $this->writeToTextFile($fullFileName, $entriesDiff);
+            return;
+        }
+        $entriesToAdd = array_diff($this->list, $entriesAll);
+        $entriesToAddRules = array_map([$this, 'getFirewallRuleAdd'], $entriesToAdd);
+        $entriesToRemove = array_diff($entriesAll, $this->list);
+        $entriesToRemoveRules = array_map([$this, 'getFirewallRuleRemove'], $entriesToRemove);
+        $entriesDiff = array_merge($entriesToAddRules, $entriesToRemoveRules);
+        if (empty($entriesDiff)) {
+            $this->writeToTextFile($fullFileName, $entriesDiff);
+            return;
+        }
+        array_unshift($entriesDiff, "/ip firewall address-list");
+        $this->writeToTextFile($fullFileName, $entriesDiff);
+    }
+
+    private function saveBlackListEntries()
+    {
+        $this->writeToTextFile(self::BLACKLISTFULL_FILENAME, $this->list);
+    }
+
     /**
      * @param string $fullFileName
      */
-    private function saveList($fullFileName)
+    private function saveAllBlackListRules($fullFileName)
     {
-        $content = $this->list;
-        array_unshift($content, "/ip firewall address-list\n");
-        file_put_contents($fullFileName, $content);
+        $content = array_map([$this, 'getFirewallRuleAdd'], $this->list);
+        array_unshift($content, "/ip firewall address-list");
+        $this->writeToTextFile($fullFileName, $content);
     }
 
     /**
@@ -98,10 +129,10 @@ class Builder
      */
     private function getEntry($line)
     {
-        if (!$this->isCorrectIpset($line)) {
-            return null;
+        if ($this->isCorrectIpset($line)) {
+            return $line;
         }
-        return $this->getFirewallRule($line);
+        return null;
     }
 
     /**
@@ -123,8 +154,33 @@ class Builder
      * @param string $ipset
      * @return string
      */
-    private function getFirewallRule($ipset)
+    private function getFirewallRuleAdd($ipset)
     {
-        return sprintf('add list=blacklist timeout=1d5m address=%s', $ipset);
+        return sprintf('add list=blacklist address=%s', $ipset);
+    }
+
+    /**
+     * @param string $ipset
+     * @return string
+     */
+    private function getFirewallRuleRemove($ipset)
+    {
+        return sprintf('remove list=blacklist [find address=%s]', $ipset);
+    }
+
+    /**
+     * @param $fullFileName
+     * @param array $entries
+     * @return false|int
+     */
+    private function writeToTextFile($fullFileName, array $entries)
+    {
+        $content = array_map(
+            function ($line) {
+                return $line . PHP_EOL;
+            },
+            $entries
+        );
+        return file_put_contents($fullFileName, $content);
     }
 }
