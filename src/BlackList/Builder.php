@@ -165,7 +165,7 @@ class Builder
      */
     private function getFirewallRuleRemove($ipset)
     {
-        return sprintf('remove list=blacklist [find address=%s]', $ipset);
+        return sprintf('remove [find where list="blacklist" && address=%s]', $ipset);
     }
 
     /**
