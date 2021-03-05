@@ -156,7 +156,7 @@ class Builder
      */
     private function getFirewallRuleAdd($ipset)
     {
-        return sprintf('add list=blacklist address=%s', $ipset);
+        return sprintf('add list=blacklist timeout=1d5m address=%s', $ipset);
     }
 
     /**
