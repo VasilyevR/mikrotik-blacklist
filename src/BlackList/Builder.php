@@ -145,7 +145,7 @@ class Builder
             return null;
         }
 
-        $ip = $m['ip'];
+        $ip = isset($m['ip']) ? $m['ip'] : '';
         $subnet = isset($m['subnet']) ? $m['subnet'] : null;
 
         if (false === ip2long($ip)) {
