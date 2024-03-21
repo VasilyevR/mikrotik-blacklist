@@ -4,7 +4,7 @@ namespace App\BlackList;
 
 class Builder
 {
-    const IP_ENTRY = "/^(?'ip'(?:[0-9]{1,3}\.){3}[0-9]{1,3})\/?(?'subnet'\d+)?$/";
+    const IP_ENTRY = "/^(?'ip'(?:[0-9]{1,3}\.){3}[0-9]{1,3})\/?(?'subnet'\d+)?/";
 
     const BLACKLISTFULL_FILENAME = 'blacklistfull.txt';
 
@@ -127,27 +127,36 @@ class Builder
      * @param string $line
      * @return string|null
      */
-    private function getEntry($line)
+    private function getEntry(string $line)
     {
-        if ($this->isCorrectIpset($line)) {
-            return $line;
+        if ($ipset = $this->getCorrectIpset($line)) {
+            return $ipset;
         }
         return null;
     }
 
     /**
      * @param string $line
-     * @return bool
+     * @return string|null
      */
-    private function isCorrectIpset($line)
+    private function getCorrectIpset(string $line)
     {
-        if (preg_match(self::IP_ENTRY, $line, $m)) {
-            $ip = $m['ip'];
-            $subnet = isset($m['subnet']) ? $m['subnet'] : null;
-            $isSubnetOk = is_numeric($subnet) || null === $subnet;
-            return $isSubnetOk && ip2long($ip);
+        if (false === preg_match(self::IP_ENTRY, $line, $m)) {
+            return null;
         }
-        return false;
+
+        $ip = $m['ip'];
+        $subnet = isset($m['subnet']) ? $m['subnet'] : null;
+
+        if (false === ip2long($ip)) {
+            return null;
+        }
+
+        if (is_numeric($subnet)) {
+            return sprintf("%s/%s", $ip, $subnet);
+        }
+
+        return $ip;
     }
 
     /**
